@@ -42,7 +42,31 @@ def load_dataset(path: str):
     
     print(X.shape, y.shape)
     
-    return X, y     
+    return X, y
+
+def initialise_parameters(input_size, hidden_size, output_size):
+    W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2 / input_size)
+    b1 = np.zeros((hidden_size,))
+    W2 = np.random.randn(hidden_size, output_size) * np.sqrt(2 / hidden_size)
+    b2 = np.zeros((output_size,))
+    return W1, b1, W2, b2
+
+def relu(z):
+    return np.maximum(0, z)
+
+def sigmoid(z):
+    return 1/(1 + np.exp(-z))
+
+def forward_pass(x, w1, b1, w2, b2):
+    z1 = np.dot(x, w1) + b1
+    a1 = relu(z1)
+    z2 = np.dot(a1, w2) + b2
+    y = sigmoid(z2)
+    return y
     
-print(load_dataset('data/chest_xray/train'))
+X, y = load_dataset('data/chest_xray/train')    
+W1, b1, W2, b2 = initialise_parameters(4096, 64, 1)
+y_hat = forward_pass(X, W1, b1, W2, b2)
+print(y_hat.shape)
+print(y_hat[:5])
 
