@@ -62,11 +62,50 @@ def forward_pass(x, w1, b1, w2, b2):
     a1 = relu(z1)
     z2 = np.dot(a1, w2) + b2
     y = sigmoid(z2)
-    return y
+    return y, z1, a1
+
+def loss_function(y_true, y_hat):
+    y_hat = np.clip(y_hat, 1e-8, 1 - 1e-8) # clip because np.log(0) is -inf, break training if the network ever predicts exactly 0 or 1
+    bce = -np.mean(y_true * np.log(y_hat) + (1 - y_true) * np.log(1 - y_hat))   # Binary cross entropy function translated to Python
+    return bce
+
+def backward_pass(X, y, y_hat, W2, Z1, A1): # d means derivative
+    N = X.shape[0]
+    dZ2 = y_hat - y
+    dW2 = np.dot(A1.T, dZ2)
+    db2 = np.sum(dZ2)
     
-X, y = load_dataset('data/chest_xray/train')    
-W1, b1, W2, b2 = initialise_parameters(4096, 64, 1)
-y_hat = forward_pass(X, W1, b1, W2, b2)
-print(y_hat.shape)
-print(y_hat[:5])
+    dA1 = np.dot(dZ2, W2.T)
+    dZ1 = dA1 * (Z1 > 0).astype(float)
+    dW1 = np.dot(X.T, dZ1)
+    db1 = np.sum(dZ1)
+    
+    return dW1/N, db1/N, dW2/N, db2/N
+
+def update_parameters(W1, b1, W2, b2, dW1, db1, dW2, db2, learning_rate):
+    W1 = W1 - learning_rate * dW1
+    W2 = W2 - learning_rate * dW2
+    b1 = b1 - learning_rate * db1
+    b2 = b2 - learning_rate * db2
+    
+    return W1, b1, W2, b2
+
+def train(X, y, learning_rate, epochs):
+    W1, b1, W2, b2 = initialise_parameters(4096, 64, 1)
+    for epoch in range(epochs):
+        y_hat, Z1, A1 = forward_pass(X, W1, b1, W2, b2)
+        loss = loss_function(y, y_hat)
+        dW1, db1, dW2, db2 =backward_pass(X, y, y_hat, W2, Z1, A1)
+        W1, b1, W2, b2 = update_parameters(W1, b1, W2, b2, dW1, db1, dW2, db2, learning_rate)
+        print(loss)
+    
+    
+X, y = load_dataset('data/chest_xray/train')
+y = y.reshape(-1, 1)  
+# W1, b1, W2, b2 = initialise_parameters(4096, 64, 1)
+# y_hat = forward_pass(X, W1, b1, W2, b2)
+# print(y_hat.shape)
+# print(y_hat[:5])
+# print(loss_function(y, y_hat))
+train(X, y, 0.01, 100)
 
