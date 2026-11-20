@@ -40,8 +40,6 @@ def load_dataset(path: str):
     X = np.array(x)
     y = np.array(y)
     
-    print(X.shape, y.shape)
-    
     return X, y
 
 def initialise_parameters(input_size, hidden_size, output_size):
@@ -92,20 +90,32 @@ def update_parameters(W1, b1, W2, b2, dW1, db1, dW2, db2, learning_rate):
 
 def train(X, y, learning_rate, epochs):
     W1, b1, W2, b2 = initialise_parameters(4096, 64, 1)
+    
     for epoch in range(epochs):
         y_hat, Z1, A1 = forward_pass(X, W1, b1, W2, b2)
         loss = loss_function(y, y_hat)
         dW1, db1, dW2, db2 =backward_pass(X, y, y_hat, W2, Z1, A1)
         W1, b1, W2, b2 = update_parameters(W1, b1, W2, b2, dW1, db1, dW2, db2, learning_rate)
-        print(loss)
+        print(f"Epoch {epoch+1}/{epochs} - Loss: {loss:.4f}")
     
+    return W1, b1, W2, b2 
+        
+def accuracy(y, y_hat):
+    y_pred = (y_hat >= 0.5).astype(int) # can use for loop but y_pred was a plain python list so the comparison with y (a 2D NumPy array) it fumbled
+    accuracy = np.mean(y_pred == y)
+    return accuracy
+
     
+# Train set
 X, y = load_dataset('data/chest_xray/train')
 y = y.reshape(-1, 1)  
-# W1, b1, W2, b2 = initialise_parameters(4096, 64, 1)
-# y_hat = forward_pass(X, W1, b1, W2, b2)
-# print(y_hat.shape)
-# print(y_hat[:5])
-# print(loss_function(y, y_hat))
-train(X, y, 0.01, 100)
+W1, b1, W2, b2 = train(X, y, 0.001, 500)
+y_hat, _, _ = forward_pass(X, W1, b1, W2, b2) # need to unpack every element because Z1 and A1 were added 
+print(f"Train accuracy: {accuracy(y, y_hat):.4f}")
+
+# Test set
+X_test, y_test = load_dataset('data/chest_xray/test')
+y_test = y_test.reshape(-1, 1)
+y_hat_test, _, _ = forward_pass(X_test, W1, b1, W2, b2)
+print(f"Test accuracy: {accuracy(y_test, y_hat_test):.4f}")
 
